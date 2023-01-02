@@ -1,0 +1,236 @@
+  values: |
+  k8s:
+    podSubnets:
+      - 10.42.0.0/16
+    #  - 2001:920:1868:800:f1:0:1::/112 #Macvlan subnet
+    domain: cluster.local
+    dnsServer: kube-dns
+    dnsServerNamespace: kube-system
+    headlessServiceIdentifier: "-int"
+  # -- Sets IMS domains and DNS server for PowerDNS Recursor
+  ims:
+    dnsServer: server
+    domains:
+      - ims.mnc001.mcc001.3gppnetwork.org
+      - ims.mnc001.mcc001.pub.3gppnetwork.org
+  # -- Sets ENUM domains and DNS server for PowerDNS Recursor
+  enum:
+    # -- Set IP without enclosing in "[]". Specifically in case of IPv6
+    dnsServer: server
+    domains:
+      - ims.mnc001.mcc001.3gppnetwork.org
+  
+  # -- IP version related variables
+  ipVersion:
+    # -- Sets IP version for PowerDNS recursor
+    ipv6: false
+    # -- Sets IP family
+    ipFamilies:
+      - IPv6
+  affinity:
+      # -- Sets B2BUA custom pod anti-affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+      antiAffinity: 
+        antiAffinityTopologyKey: "kubernetes.io/hostname"
+        # -- Sets B2BUA pod anti-affinity type, values can only be "hard", "soft", "none". Default value is "soft"
+        antiAffinityType: soft
+        # -- Sets B2BUA pod anti-affinity labels
+      # -- Sets B2BUA custom pod affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+      podAffinity:  
+        affinityTopologyKey: "kubernetes.io/hostname"
+        # -- Sets B2BUA pod affinity type, values can only be "hard", "soft", "none". Default value is "none"
+        affinityType: soft
+        # -- Sets B2BUA pod affinity labels
+        affinityLabels:
+            kubernetes.io/hostname:
+              - worker1
+              - worker2
+      nodeAffinity:
+        # -- Sets RTP-Engine Node Affinity Type, values can only be "hard", "soft", "none".
+        type: soft
+        labels:
+          kubernetes.io/hostname:
+            - cloudipv4-worker2 
+  
+  powerdns-server:
+    # -- Sets name prefix for PowerDNS Server resources
+    name: server
+    # -- Sets user defined labels for PowerDNS Server
+    labels:
+      app: powerdns-server
+    # -- Sets number of replicas for PowerDNS Server
+    replicas: 1
+    # -- Sets image for PowerDNS Server
+    image: dockerhub.ng-voice.com/powerdns:kubernetes_develop
+    # -- Sets database username for PowerDNS Server
+    databaseUser: &databaseUser pdns
+    # -- Sets database name for PowerDNS Server
+    databaseName: pdns
+    # -- Sets database password for PowerDNS Server
+    databasePassword: &databasePassword pdns
+    # -- Sets PowerDNS access API key for PowerDNS Server
+    apiKey: 38c635a0-f37c-4dd6-ac5c-3ded8693a39a
+    # -- Sets IMS domains for PowerDNS Server
+    domains:
+      - ims.mnc001.mcc001.3gppnetwork.org
+    # -- Sets IP version related variables for PowerDNS Server
+    ipVersion:
+      # -- Sets IP version for PowerDNS Server
+      ipv6: false
+      # -- Sets IP Family for kubernetes service for PowerDNS Server
+      ipFamilies:
+        - IPv6
+      # -- Sets IP Family Policy
+      ipFamilyPolicy: SingleStack
+    affinity:
+      # -- Sets B2BUA custom pod anti-affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+      antiAffinity: 
+        antiAffinityTopologyKey: "kubernetes.io/hostname"
+        # -- Sets B2BUA pod anti-affinity type, values can only be "hard", "soft", "none". Default value is "soft"
+        antiAffinityType: soft
+        # -- Sets B2BUA pod anti-affinity labels
+      # -- Sets B2BUA custom pod affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+      podAffinity:  
+        affinityTopologyKey: "kubernetes.io/hostname"
+        # -- Sets B2BUA pod affinity type, values can only be "hard", "soft", "none". Default value is "none"
+        affinityType: none
+        # -- Sets B2BUA pod affinity labels
+        affinityLabels:
+            kubernetes.io/hostname:
+              - worker1
+              - worker2
+      nodeAffinity:
+        # -- Sets RTP-Engine Node Affinity Type, values can only be "hard", "soft", "none".
+        type: soft
+        labels:
+          kubernetes.io/hostname:
+            - cloudipv4-worker2     
+    mysql:
+      cluster:
+        # -- Sets PowerDNS Server MySQL database cluster name
+        name: database-cluster
+        # -- Sets PowerDNS Server MySQL database cluster labels
+        labels:
+          app: &clusterLabel powerdns-server-database-cluster
+        # -- Sets PowerDNS Server MySQL database cluster number of replicas
+        replicas: 1
+        # -- Sets PowerDNS Server MySQL database cluster Docker image
+        image: dockerhub.ng-voice.com/mysql:5.7
+        # -- Sets PowerDNS Server MySQL database cluster backup Docker image
+        xtrabackupImage: dockerhub.ng-voice.com/gcr.io/google-samples/xtrabackup:1.0
+        # -- Sets PowerDNS Server MySQL database cluster requested volume capacity from Kubernetes
+        volumeCapacity: 1Gi
+        # -- Sets PowerDNS Server MySQL database cluster root password for database instances
+        rootPassword: ngvoice
+        # -- Sets PowerDNS Server MySQL database cluster volume access mode for Kubernetes PVC
+        volumeAccessMode: ReadWriteOnce
+        # -- Sets PowerDNS Server MySQL database cluster requested CPU resources from Kubernetes
+        resourcesRequestsCpu: 150m
+        # -- Sets PowerDNS Server MySQL database cluster requested memory resources from Kubernetes
+        resourcesRequestsRam: 200Mi
+        # -- Sets PowerDNS Server MySQL database cluster Kubernetes StorageClass name
+        storageClassName: longhorn
+        # -- Sets PowerDNS Server MySQL database cluster initialization SQL data
+        sqlData: |
+        # -- Sets PowerDNS Server MySQL database cluster initialization SQL data ConfigMap name (Overrides sqlData)
+        sqlDataConfigMap: "database-cluster-initdb"
+        # -- Sets PowerDNS Server MySQL database cluster Pods resources
+        resources:
+          # -- Sets PowerDNS Server MySQL database cluster  threshold for maximum allocated resources
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          # -- Sets PowerDNS Server MySQL database cluster  threshold for minimum allocated resources
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        affinity:
+           # -- Sets B2BUA custom pod anti-affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+           antiAffinity: 
+             antiAffinityTopologyKey: "kubernetes.io/hostname"
+             # -- Sets B2BUA pod anti-affinity type, values can only be "hard", "soft", "none". Default value is "soft"
+             antiAffinityType: soft
+             # -- Sets B2BUA pod anti-affinity labels
+           # -- Sets B2BUA custom pod affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+           podAffinity:  
+             affinityTopologyKey: "kubernetes.io/hostname"
+             # -- Sets B2BUA pod affinity type, values can only be "hard", "soft", "none". Default value is "none"
+             affinityType: soft
+             # -- Sets B2BUA pod affinity labels
+             affinityLabels:
+                 kubernetes.io/hostname:
+                   - worker1
+                   - worker2
+           nodeAffinity:
+             # -- Sets RTP-Engine Node Affinity Type, values can only be "hard", "soft", "none".
+             type: soft
+             labels:
+               kubernetes.io/hostname:
+                 - cloudipv4-worker2      
+      proxy:
+        # -- Sets PowerDNS Server MySQL database proxy name
+        name: database-proxy
+        # -- Sets PowerDNS Server MySQL database proxy labels
+        labels:
+          app: &proxyLabel powerdns-server-database-proxy
+        # -- Sets PowerDNS Server MySQL database proxy label
+        replicas: 1
+        # -- Sets PowerDNS Server MySQL database proxy Docker image
+        image: dockerhub.ng-voice.com/proxysql/proxysql:latest
+        # -- Sets PowerDNS Server MySQL database proxy Pods resources
+        resources:
+          # -- Sets PowerDNS Server MySQL database proxy threshold for maximum allocated resources
+          limits:
+            cpu: 150m
+            memory: 200Mi
+          # -- Sets PowerDNS Server MySQL database proxy for minimum allocated resources
+          requests:
+            cpu: 150m
+            memory: 200Mi
+        affinity:
+           # -- Sets B2BUA custom pod anti-affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+           antiAffinity: 
+             antiAffinityTopologyKey: "kubernetes.io/hostname"
+             # -- Sets B2BUA pod anti-affinity type, values can only be "hard", "soft", "none". Default value is "soft"
+             antiAffinityType: soft
+             # -- Sets B2BUA pod anti-affinity labels
+           # -- Sets B2BUA custom pod affinity topology key, by default "kubernetes.io/hostname" is used for "soft" type regardless. This value adds another topology key with higher priority for the "soft" type but changes the topology key for the "hard" type
+           podAffinity:  
+             affinityTopologyKey: "kubernetes.io/hostname"
+             # -- Sets B2BUA pod affinity type, values can only be "hard", "soft", "none". Default value is "none"
+             affinityType: soft
+             # -- Sets B2BUA pod affinity labels
+             affinityLabels:
+                 kubernetes.io/hostname:
+                   - worker1
+                   - worker2
+           nodeAffinity:
+             # -- Sets RTP-Engine Node Affinity Type, values can only be "hard", "soft", "none".
+             type: soft
+             labels:
+               kubernetes.io/hostname:
+                 - cloudipv4-worker2      
+        proxysql:
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL admin username
+          adminUsername: admin
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL admin password
+          adminPassword: admin
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL admin port
+          adminPort: 6032
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL monitoring usernname
+          monitoringUsername: proxysql
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL monitoring password
+          monitoringPassword: proxysqlsecretpassword
+          # -- Sets PowerDNS Server MySQL database proxy ProxySQL authorized user
+          users:
+            - name: *databaseUser
+              password: *databasePassword
+      # -- Sets IP version related variables for MySQL
+      ipVersion:
+        # -- Sets IP version for MySQL
+        ipv6: false
+        # -- Sets IP Family for kubernetes service for MySQL
+        ipFamilies:
+          - IPv6
+        # -- Sets IP Family Policy
+        ipFamilyPolicy: SingleStack
+  

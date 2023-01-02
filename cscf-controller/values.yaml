@@ -1,0 +1,5 @@
+values: |
+  image:  dockerhub.ng-voice.com/cscf-controller:2.5.0-dev.2_fe6f6fb94321bdf3819ab555381303eb2eda258c
+  eventsNamespace:
+    - ims
+

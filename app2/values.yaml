@@ -1,9 +1,0 @@
-values: |
-  resources:
-     limits:
-       cpu: 150m
-       memory: 128Mi
-     requests:
-        cpu: 150m
-        memory: 128Mi
-
